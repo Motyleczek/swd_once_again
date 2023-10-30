@@ -40,6 +40,32 @@ def compare(y, x):
     else:
         return False
 
+class PopupWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('Popup Window')
+        self.setGeometry(300, 300, 300, 100)
+
+        layout = QVBoxLayout()
+
+        # Create a combo box and add items
+        self.combo_box = QComboBox()
+        self.combo_box.addItem("Option 1")
+        self.combo_box.addItem("Option 2")
+        self.combo_box.addItem("Option 3")
+        layout.addWidget(self.combo_box)
+
+        # Create a button to close the popup
+        close_button = QPushButton('Close')
+        close_button.clicked.connect(self.close)
+        layout.addWidget(close_button)
+
+        self.setLayout(layout)
+
 class WidgetGallery(QDialog):
     def __init__(self, parent=None):
         super(WidgetGallery, self).__init__(parent)
@@ -318,42 +344,65 @@ class WidgetGallery(QDialog):
         pushButton2 = QPushButton("OWD filtracja")
         pushButton3 = QPushButton("OWD punkt idealny")
         pushButton4 = QPushButton("Topsis")
-        pushButton5 = QPushButton("RMS")
+        # pushButton5 = QPushButton("RMS")
 
         pushButton1.setChecked(False)
         pushButton2.setChecked(False)
         pushButton3.setChecked(False)
         pushButton4.setChecked(False)
-        pushButton5.setChecked(False)
+        # pushButton5.setChecked(False)
 
         pushButton1.clicked.connect(self.owd_v1)
         pushButton2.clicked.connect(self.owd_v2)
         pushButton3.clicked.connect(self.owd_v3)
         pushButton4.clicked.connect(self.topsis)
-        pushButton5.clicked.connect(self.rms)
+        # pushButton5.clicked.connect(self.rms)
 
         layout = QVBoxLayout()
         layout.addWidget(pushButton1)
         layout.addWidget(pushButton2)
         layout.addWidget(pushButton3)
         layout.addWidget(pushButton4)
-        layout.addWidget(pushButton5)
+        # layout.addWidget(pushButton5)
         layout.addStretch(1)
         self.topLeftGroupBox.setLayout(layout)
-
+        
+        
+    def show_popup(self):
+        popup = PopupWindow()
+        popup.exec_()
+    
     def createTopRightGroupBox(self):
         self.topRightGroupBox = QGroupBox("Funkcjonalności")
 
-        defaultPushButton1 = QPushButton("Wprowadzanie danych")
+        defaultComboBox1 = QComboBox()
+        defaultComboBox1.addItem("2 kryteria")
+        defaultComboBox1.addItem("3 kryteria")
+        defaultComboBox1.addItem("4 kryteria")
+        defaultComboBox1.addItem("6 kryteria")
+        
+        defaultComboBox2 = QComboBox()
+        defaultComboBox2.addItem("10 punktów")
+        defaultComboBox2.addItem("50 punktów")
+        defaultComboBox2.addItem("100 punktów")
+        defaultComboBox2.addItem("1000 punktów")
+        
+        defaultPushButton1 = QPushButton("Import danych")
+        defaultPushButton3 = QPushButton("Generacja danych")
         defaultPushButton2 = QPushButton("Wizualicja na wykresie")
 
         defaultPushButton1.setDefault(False)
         defaultPushButton2.setDefault(False)
+        defaultPushButton3.setDefault(False)
 
         defaultPushButton1.clicked.connect(self.data_import)
         defaultPushButton2.clicked.connect(self.visualise_result)
+        defaultPushButton3.clicked.connect(self.show_popup)
 
         layout = QVBoxLayout()
+        layout.addWidget(defaultComboBox1)
+        layout.addWidget(defaultComboBox2)
+        layout.addWidget(defaultPushButton3)
         layout.addWidget(defaultPushButton1)
         layout.addWidget(defaultPushButton2)
 
