@@ -27,6 +27,64 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
+class PopupWindow(QDialog):
+    def __init__(self, num_criteria):
+        super().__init__()
+        self.setWindowTitle('Popup Window')
+        self.setGeometry(400, 400, 400, 150)
+
+        self.combo_boxes = []
+        self.input_fields1 = []
+        self.input_fields2 = []
+        layout = QVBoxLayout()
+
+        for i in range(num_criteria):
+            # Create a horizontal layout for each row
+            row_layout = QHBoxLayout()
+
+            # Title for the criterion
+            title_label1 = QLabel(f'Kryterium {i + 1}')
+            row_layout.addWidget(title_label1)
+
+            # Combo box for selecting an option
+            combo_box = QComboBox()
+            combo_box.addItem("Rozklad Normalny")
+            combo_box.addItem("Rozklad Gausa")
+            combo_box.addItem("Rozloz nogi malenki")
+            self.combo_boxes.append(combo_box)
+            row_layout.addWidget(combo_box)
+
+            title_label2 = QLabel(f'parametr µ {i + 1}')
+            row_layout.addWidget(title_label2)
+
+            # Input field for entering parameters 
+            input_field1 = QLineEdit()
+            self.input_fields1.append(input_field1)
+            row_layout.addWidget(input_field1)
+
+            title_label3 = QLabel(f'parametr σ {i + 1}')
+            row_layout.addWidget(title_label3)
+
+            input_field2 = QLineEdit()
+            self.input_fields2.append(input_field2)
+            row_layout.addWidget(input_field2)
+
+            layout.addLayout(row_layout)
+
+        accept_button = QPushButton('Accept')
+        accept_button.clicked.connect(self.accept)
+        layout.addWidget(accept_button)
+
+        self.setLayout(layout)
+
+    def get_selected_values(self):
+        selected_values = []
+        for i in range(len(self.combo_boxes)):
+            combo_box_value = self.combo_boxes[i].currentText()
+            input_value1 = self.input_fields1[i].text()
+            input_value2 = self.input_fields2[i].text()
+            selected_values.append((combo_box_value, input_value1, input_value2))
+        return selected_values
 
 def compare(y, x):
     # realizuje porównanie y <= x
@@ -39,32 +97,6 @@ def compare(y, x):
         return True
     else:
         return False
-
-class PopupWindow(QDialog):
-    def __init__(self):
-        super().__init__()
-
-        self.initUI()
-
-    def initUI(self):
-        self.setWindowTitle('Popup Window')
-        self.setGeometry(300, 300, 300, 100)
-
-        layout = QVBoxLayout()
-
-        # Create a combo box and add items
-        self.combo_box = QComboBox()
-        self.combo_box.addItem("Option 1")
-        self.combo_box.addItem("Option 2")
-        self.combo_box.addItem("Option 3")
-        layout.addWidget(self.combo_box)
-
-        # Create a button to close the popup
-        close_button = QPushButton('Close')
-        close_button.clicked.connect(self.close)
-        layout.addWidget(close_button)
-
-        self.setLayout(layout)
 
 class WidgetGallery(QDialog):
     def __init__(self, parent=None):
@@ -368,10 +400,15 @@ class WidgetGallery(QDialog):
         self.topLeftGroupBox.setLayout(layout)
         
         
-    def show_popup(self):
-        popup = PopupWindow()
-        popup.exec_()
+    # def show_popup(self, number):
+       
+
+    #     # Get the selected number of criteria from the combo box
+    #     popup = PopupWindow(number)
+    #     popup.exec_()
+        
     
+    # Modify createTopRightGroupBox method
     def createTopRightGroupBox(self):
         self.topRightGroupBox = QGroupBox("Funkcjonalności")
 
@@ -380,13 +417,14 @@ class WidgetGallery(QDialog):
         defaultComboBox1.addItem("3 kryteria")
         defaultComboBox1.addItem("4 kryteria")
         defaultComboBox1.addItem("6 kryteria")
-        
+        defaultComboBox1.addItem("10 kryteria")  # Add more options as needed
+
         defaultComboBox2 = QComboBox()
         defaultComboBox2.addItem("10 punktów")
         defaultComboBox2.addItem("50 punktów")
         defaultComboBox2.addItem("100 punktów")
         defaultComboBox2.addItem("1000 punktów")
-        
+
         defaultPushButton1 = QPushButton("Import danych")
         defaultPushButton3 = QPushButton("Generacja danych")
         defaultPushButton2 = QPushButton("Wizualicja na wykresie")
@@ -397,7 +435,7 @@ class WidgetGallery(QDialog):
 
         defaultPushButton1.clicked.connect(self.data_import)
         defaultPushButton2.clicked.connect(self.visualise_result)
-        defaultPushButton3.clicked.connect(self.show_popup)
+        defaultPushButton3.clicked.connect(lambda: self.show_popup(defaultComboBox1))
 
         layout = QVBoxLayout()
         layout.addWidget(defaultComboBox1)
@@ -408,6 +446,15 @@ class WidgetGallery(QDialog):
 
         layout.addStretch(1)
         self.topRightGroupBox.setLayout(layout)
+
+    def show_popup(self, criteria_combo):
+        criteria_option = criteria_combo.currentText()
+        num_criteria = int(criteria_option.split()[0])
+        popup = PopupWindow(num_criteria)
+        result = popup.exec_()
+        if result == QDialog.Accepted:
+            selected_values = popup.get_selected_values()
+            print("Selected values:", selected_values)
 
     def createBottomLeftTabWidget(self):
         self.bottomLeftTabWidget = QTabWidget()
@@ -466,6 +513,33 @@ class WidgetGallery(QDialog):
         self.bottomRightGroupBox.setLayout(layout)
 
 
+# class PopupWindow(QDialog):
+#     def __init__(self, num_buttons):
+#         super().__init__()
+
+#         self.initUI(num_buttons)
+
+#     def initUI(self, num_buttons):
+#         self.setWindowTitle('Popup Window')
+#         self.setGeometry(300, 300, 300, 100)
+
+#         layout = QVBoxLayout()
+#         for i in range(num_buttons):
+#             button = QPushButton(f'Button {i + 1}')
+#             layout.addWidget(button)
+#         # Create a combo box and add items
+#         self.combo_box = QComboBox()
+#         self.combo_box.addItem("Option 1")
+#         self.combo_box.addItem("Option 2")
+#         self.combo_box.addItem("Option 3")
+#         layout.addWidget(self.combo_box)
+
+#         # Create a button to close the popup
+#         close_button = QPushButton('Close')
+#         close_button.clicked.connect(self.close)
+#         layout.addWidget(close_button)
+
+#         self.setLayout(layout)
 
 if __name__ == '__main__':
     app = QApplication([])
