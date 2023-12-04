@@ -38,6 +38,7 @@ class PopupWindow(QDialog):
         self.input_fields2 = []
         layout = QVBoxLayout()
 
+        
         for i in range(num_criteria):
             # Create a horizontal layout for each row
             row_layout = QHBoxLayout()
@@ -375,38 +376,30 @@ class WidgetGallery(QDialog):
         pushButton1 = QPushButton("OWD bez filtracji")
         pushButton2 = QPushButton("OWD filtracja")
         pushButton3 = QPushButton("OWD punkt idealny")
-        pushButton4 = QPushButton("Topsis")
+        # pushButton4 = QPushButton("Topsis")
         # pushButton5 = QPushButton("RMS")
 
         pushButton1.setChecked(False)
         pushButton2.setChecked(False)
         pushButton3.setChecked(False)
-        pushButton4.setChecked(False)
+        # pushButton4.setChecked(False)
         # pushButton5.setChecked(False)
 
         pushButton1.clicked.connect(self.owd_v1)
         pushButton2.clicked.connect(self.owd_v2)
         pushButton3.clicked.connect(self.owd_v3)
-        pushButton4.clicked.connect(self.topsis)
+        # pushButton4.clicked.connect(self.topsis)
         # pushButton5.clicked.connect(self.rms)
 
         layout = QVBoxLayout()
         layout.addWidget(pushButton1)
         layout.addWidget(pushButton2)
         layout.addWidget(pushButton3)
-        layout.addWidget(pushButton4)
+        # layout.addWidget(pushButton4)
         # layout.addWidget(pushButton5)
         layout.addStretch(1)
         self.topLeftGroupBox.setLayout(layout)
-        
-        
-    # def show_popup(self, number):
-       
 
-    #     # Get the selected number of criteria from the combo box
-    #     popup = PopupWindow(number)
-    #     popup.exec_()
-        
     
     # Modify createTopRightGroupBox method
     def createTopRightGroupBox(self):
@@ -435,7 +428,7 @@ class WidgetGallery(QDialog):
 
         defaultPushButton1.clicked.connect(self.data_import)
         defaultPushButton2.clicked.connect(self.visualise_result)
-        defaultPushButton3.clicked.connect(lambda: self.show_popup(defaultComboBox1))
+        defaultPushButton3.clicked.connect(lambda: self.show_popup([defaultComboBox1, defaultComboBox2]))
 
         layout = QVBoxLayout()
         layout.addWidget(defaultComboBox1)
@@ -448,13 +441,49 @@ class WidgetGallery(QDialog):
         self.topRightGroupBox.setLayout(layout)
 
     def show_popup(self, criteria_combo):
-        criteria_option = criteria_combo.currentText()
+        
+        criteria_combo2 = criteria_combo[1]
+        criteria_option = criteria_combo2.currentText()
+        num_of_records = int(criteria_option.split()[0])
+        
+        criteria_combo1 = criteria_combo[0]
+        criteria_option = criteria_combo1.currentText()
         num_criteria = int(criteria_option.split()[0])
+        
         popup = PopupWindow(num_criteria)
         result = popup.exec_()
         if result == QDialog.Accepted:
             selected_values = popup.get_selected_values()
             print("Selected values:", selected_values)
+            
+            # generacje oraz zapis do dataframe jako self.data
+            criterions = len(selected_values)
+            generated_criterions = []
+            columns_names = []
+            
+            for i in range(criterions):
+                column_name = f"Criterion_{i+1}"
+                columns_names.append(column_name)
+                type_of_dist, mu, sigma = selected_values[i]
+                mu = float(mu)
+                sigma = float(sigma)
+                
+                if type_of_dist == "Rozklad Normalny":
+                    gen_krit = np.random.normal(mu, sigma, num_of_records)
+                elif type_of_dist == "Rozklad Gausa": 
+                    gen_krit = np.random.normal(mu, sigma, num_of_records)
+                else:
+                    raise ValueError('upsi poopsi ni e taki rozklad')
+                
+                generated_criterions.append(gen_krit)
+            
+            np_gen_crit = np.array(generated_criterions).transpose()
+            self.data = pd.DataFrame(np_gen_crit, columns=columns_names)
+
+            print(self.data)
+            self.createBottomLeftTabWidget()
+            self.mainLayout.addWidget(self.bottomLeftTabWidget, 2, 0)
+             
 
     def createBottomLeftTabWidget(self):
         self.bottomLeftTabWidget = QTabWidget()
@@ -493,19 +522,34 @@ class WidgetGallery(QDialog):
         else:
             self.bottomRightGroupBox = QGroupBox("Wizualizacja wyników")
             canvas = FigureCanvas(plt.Figure(figsize=(5, 5)))
-            axs = canvas.figure.subplots()
+            axs = canvas.figure.add_subplot(projection='3d')
             # tutaj trzeba poprawnie zrobić plot danych żeby się wyświetlały z result
             # najlepszym podejściem byłoby zrobić do tego osobną funkcje klasową, ale z braku
             # czasu podejście sub-optymalne będzie wystarczające
             axs.set_title('Wyniki, dwie pierwsze zmienne, {}'.format(self.res_type))
             
             # TODO: tutaj jest druga część visualise_result: chyba tak to zostawimy byleby zadziałało
-            y_label = self.data.columns[1]
-            x_label = self.data.columns[0]
-            axs.set_ylabel(y_label)
-            axs.set_xlabel(x_label)
-            axs.grid()
-            axs.scatter(self.result[:, 0], self.result[:, 1])
+            import matplotlib.cm as cmx
+            import matplotlib
+            
+            if self.data.shape[1] == 2:
+                y_label = self.data.columns[1]
+                x_label = self.data.columns[0]
+                # axs.set_ylabel(y_label)
+                # axs.set_xlabel(x_label)
+                axs.grid()
+                axs.scatter(self.result[:, 0], self.result[:, 1], [0 for i in range(len(self.result[:, 0]))])
+            elif self.data.shape[1] == 3:
+                axs.grid()
+                axs.scatter(self.result[:, 0], self.result[:, 1], self.result[:, 2])
+            else:
+                axs.grid()
+                cm = plt.get_cmap('jet')
+                cNorm = matplotlib.colors.Normalize(vmin=min(self.result[:, 3]), vmax=max(self.result[:, 3]))
+                scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
+                axs.scatter(self.result[:, 0], self.result[:, 1], self.result[:, 2], c=scalarMap.to_rgba(self.result[:, 3]))
+                scalarMap.set_array(self.result[:, 3])
+                canvas.figure.colorbar(scalarMap,label='Test')
             ######
             
         layout = QGridLayout()
@@ -549,3 +593,7 @@ if __name__ == '__main__':
 
 # testowanie różnej ilosci w zbiorach
 # testowanie po 2, 3, 6 cech
+
+
+# mój pomysł jest taki ze znajde to zajebane wiki i zajebiemy projekt do matlaba
+# bo normalnie bym napisał w pythonie, ale ten przypadek ciągły to mnie rozjebie
